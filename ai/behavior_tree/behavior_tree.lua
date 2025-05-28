@@ -353,3 +353,13 @@ end
 
 
 return M
+
+--- Always succeeds regardless of context. Useful as a selector fallback.
+function M.succeed_always(name)
+    return M.action(function() return M.SUCCESS end, name or "succeed_always")
+end
+
+--- Always fails. Useful for forcing selector fallthrough during prototyping.
+function M.fail_always(name)
+    return M.action(function() return M.FAILURE end, name or "fail_always")
+end
