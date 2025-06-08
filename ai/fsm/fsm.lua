@@ -131,3 +131,20 @@ function M.get_history(machine, count)
 end
 
 return M
+
+--- Reset FSM to a given state, calling exit/enter hooks.
+function M.reset(machine, initial_state, context)
+    local old = machine.states[machine.current]
+    if old and old.exit then old.exit(context or {}) end
+    machine.current = initial_state
+    machine.previous = nil
+    machine._time_in_state = 0
+    machine.history = {}
+    local new = machine.states[machine.current]
+    if new and new.enter then new.enter(context or {}) end
+end
+
+--- Clear transition history.
+function M.clear_history(machine)
+    machine.history = {}
+end
