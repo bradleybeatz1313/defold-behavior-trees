@@ -143,3 +143,7 @@ function M.count_alive(faction)
 end
 
 return M
+
+M.NOISE_LOW    = 0.2
+M.NOISE_MEDIUM = 0.5
+M.NOISE_HIGH   = 0.9
