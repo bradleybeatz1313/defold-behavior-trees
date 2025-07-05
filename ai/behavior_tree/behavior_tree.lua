@@ -363,3 +363,9 @@ end
 function M.fail_always(name)
     return M.action(function() return M.FAILURE end, name or "fail_always")
 end
+
+--- Subtree reference: embeds another tree lazily via a factory function.
+function M.subtree(get_tree, name)
+    return { type="action", name=name or "subtree",
+             execute=function(ctx) return M.run(get_tree(ctx), ctx) end }
+end
