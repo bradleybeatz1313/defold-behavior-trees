@@ -148,3 +148,15 @@ end
 function M.clear_history(machine)
     machine.history = {}
 end
+
+--- Check if transitioning to target is currently valid.
+function M.can_transition(machine, target, context)
+    if not machine.states[target] then return false, "unknown state" end
+    for _, t in ipairs(machine.transitions) do
+        if (t.from == machine.current or t.from == "*") and t.to == target then
+            if not t.guard or t.guard(context, machine) then return true, "ok" end
+            return false, "guard blocked"
+        end
+    end
+    return false, "no matching transition"
+end
