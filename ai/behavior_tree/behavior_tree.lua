@@ -369,3 +369,12 @@ function M.subtree(get_tree, name)
     return { type="action", name=name or "subtree",
              execute=function(ctx) return M.run(get_tree(ctx), ctx) end }
 end
+
+--- Guard decorator: only executes child if condition passes.
+function M.guard(condition, child, name)
+    return { type="action", name=name or "guard",
+             execute=function(ctx)
+                 if condition(ctx) then return M.run(child, ctx) end
+                 return M.FAILURE
+             end }
+end
