@@ -89,3 +89,12 @@ defold-behavior-trees/
 ## 📄 License
 
 MIT
+
+---
+
+## Integration Guide
+
+1. Copy `ai/` into your Defold project root.
+2. Require the modules: `local bt = require("ai.behavior_tree.behavior_tree")`
+3. Build a tree in `init()`, call `bt.run(tree, context)` each `update()`.
+4. Pass a shared **context table** (blackboard) through all nodes.
