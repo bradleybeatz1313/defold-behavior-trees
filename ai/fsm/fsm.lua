@@ -160,3 +160,12 @@ function M.can_transition(machine, target, context)
     end
     return false, "no matching transition"
 end
+
+--- Count how many times a state has been entered (from history).
+function M.visit_count(machine, state_name)
+    local count = 0
+    for _, e in ipairs(machine.history) do
+        if e.to == state_name then count = count + 1 end
+    end
+    return count
+end
