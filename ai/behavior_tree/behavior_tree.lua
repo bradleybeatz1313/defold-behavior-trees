@@ -378,3 +378,10 @@ function M.guard(condition, child, name)
                  return M.FAILURE
              end }
 end
+
+--- Returns a compact one-line status string for HUD or logging.
+function M.status_line(node, last_status)
+    return string.format("[BT:%s] status=%s", node.name or "?", last_status or "none")
+end
+
+M.VERSION = "1.3.0"
