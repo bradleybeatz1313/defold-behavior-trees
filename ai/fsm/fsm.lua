@@ -169,3 +169,8 @@ function M.visit_count(machine, state_name)
     end
     return count
 end
+
+--- Total transitions recorded in history.
+function M.transition_count(machine)
+    return #machine.history
+end
