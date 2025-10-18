@@ -98,3 +98,12 @@ MIT
 2. Require the modules: `local bt = require("ai.behavior_tree.behavior_tree")`
 3. Build a tree in `init()`, call `bt.run(tree, context)` each `update()`.
 4. Pass a shared **context table** (blackboard) through all nodes.
+
+---
+
+## Performance Notes
+
+- Trees are evaluated every tick -- keep condition functions O(1).
+- Use `cooldown` nodes to rate-limit expensive sub-trees.
+- FSM history is capped at `max_history` (default 20) to bound memory.
+- `random_selector` uses Fisher-Yates; avoid large child counts per tick.
