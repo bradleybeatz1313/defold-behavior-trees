@@ -385,3 +385,19 @@ function M.status_line(node, last_status)
 end
 
 M.VERSION = "1.3.0"
+
+--- Shallow-clone a tree node. Useful for per-agent tree instantiation.
+function M.clone(node)
+    local copy = {}
+    for k, v in pairs(node) do
+        if k == "children" then
+            copy.children = {}
+            for i, child in ipairs(v) do copy.children[i] = M.clone(child) end
+        elseif k == "child" then
+            copy.child = M.clone(v)
+        else
+            copy[k] = v
+        end
+    end
+    return copy
+end
