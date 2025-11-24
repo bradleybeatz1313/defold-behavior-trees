@@ -174,3 +174,9 @@ end
 function M.transition_count(machine)
     return #machine.history
 end
+
+--- Update max history buffer size at runtime.
+function M.set_max_history(machine, max)
+    machine._max_history = max
+    while #machine.history > max do table.remove(machine.history, 1) end
+end
