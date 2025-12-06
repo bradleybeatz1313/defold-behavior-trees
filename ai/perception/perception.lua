@@ -147,3 +147,12 @@ return M
 M.NOISE_LOW    = 0.2
 M.NOISE_MEDIUM = 0.5
 M.NOISE_HIGH   = 0.9
+
+--- Returns a normalized alert level [0-1] based on stimulus intensity.
+function M.alert_level(intensity)
+    if intensity <= M.NOISE_LOW then return 0.0 end
+    if intensity <= M.NOISE_MEDIUM then
+        return (intensity - M.NOISE_LOW) / (M.NOISE_MEDIUM - M.NOISE_LOW) * 0.5
+    end
+    return 0.5 + (intensity - M.NOISE_MEDIUM) / (M.NOISE_HIGH - M.NOISE_MEDIUM) * 0.5
+end
