@@ -401,3 +401,8 @@ function M.clone(node)
     end
     return copy
 end
+
+--- No-op action: succeeds immediately, does nothing. Placeholder during dev.
+function M.noop(name)
+    return M.action(function() return M.SUCCESS end, name or "noop")
+end
