@@ -406,3 +406,16 @@ end
 function M.noop(name)
     return M.action(function() return M.SUCCESS end, name or "noop")
 end
+
+--- Timed wait node: returns RUNNING until duration has elapsed.
+--- Requires context.time (current timestamp) to be maintained by the caller.
+function M.wait(duration, name)
+    local node = { type="action", name=name or "wait", _start=nil }
+    node.execute = function(ctx)
+        local now = ctx.time or os.clock()
+        if not node._start then node._start = now end
+        if (now - node._start) >= duration then node._start = nil; return M.SUCCESS end
+        return M.RUNNING
+    end
+    return node
+end
