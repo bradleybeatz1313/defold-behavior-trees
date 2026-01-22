@@ -180,3 +180,14 @@ function M.set_max_history(machine, max)
     machine._max_history = max
     while #machine.history > max do table.remove(machine.history, 1) end
 end
+
+--- Validate an FSM config before creation. Returns list of error strings.
+function M.validate_config(config)
+    local errors = {}
+    if not config.initial then table.insert(errors, "missing initial") end
+    for i, t in ipairs(config.transitions or {}) do
+        if not t.from then table.insert(errors, "transition["..i.."] missing from") end
+        if not t.to   then table.insert(errors, "transition["..i.."] missing to")   end
+    end
+    return errors
+end
