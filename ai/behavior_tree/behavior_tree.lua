@@ -419,3 +419,13 @@ function M.wait(duration, name)
     end
     return node
 end
+
+--- Returns true if any node in the tree still has a running-child pointer.
+function M.is_running(node)
+    if node._running_child then return true end
+    if node.children then
+        for _, c in ipairs(node.children) do if M.is_running(c) then return true end end
+    end
+    if node.child then return M.is_running(node.child) end
+    return false
+end
