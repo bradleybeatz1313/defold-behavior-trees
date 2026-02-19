@@ -191,3 +191,8 @@ function M.validate_config(config)
     end
     return errors
 end
+
+--- Register a global callback fired on every state transition.
+function M.on_transition(machine, callback)
+    machine._on_transition = callback
+end
