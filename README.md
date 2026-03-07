@@ -107,3 +107,22 @@ MIT
 - Use `cooldown` nodes to rate-limit expensive sub-trees.
 - FSM history is capped at `max_history` (default 20) to bound memory.
 - `random_selector` uses Fisher-Yates; avoid large child counts per tick.
+
+---
+
+## Node Reference
+
+| Node | Type | Returns |
+|------|------|---------|
+| selector | Composite | SUCCESS on first child success |
+| sequence | Composite | SUCCESS only if all succeed |
+| parallel | Composite | Configurable policy |
+| condition | Leaf | SUCCESS/FAILURE from predicate |
+| action | Leaf | Any status from execute fn |
+| inverter | Decorator | Flips SUCCESS/FAILURE |
+| repeater | Decorator | Loops child N times |
+| cooldown | Decorator | Rate-limits child |
+| guard | Decorator | Condition-gated child |
+| wait | Leaf | RUNNING until duration elapsed |
+| subtree | Reference | Delegates to another tree |
+| noop | Leaf | Always SUCCESS |
