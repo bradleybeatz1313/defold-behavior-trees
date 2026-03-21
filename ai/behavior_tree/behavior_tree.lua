@@ -429,3 +429,14 @@ function M.is_running(node)
     if node.child then return M.is_running(node.child) end
     return false
 end
+
+--- Wraps a tree with a tick counter for lightweight profiling.
+function M.profiled(root)
+    return {
+        node=root, tick_count=0,
+        run=function(self, ctx)
+            self.tick_count = self.tick_count + 1
+            return M.run(self.node, ctx)
+        end
+    }
+end
