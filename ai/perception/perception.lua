@@ -156,3 +156,5 @@ function M.alert_level(intensity)
     end
     return 0.5 + (intensity - M.NOISE_MEDIUM) / (M.NOISE_HIGH - M.NOISE_MEDIUM) * 0.5
 end
+
+M.VERSION = "1.2.0"
