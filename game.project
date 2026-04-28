@@ -19,3 +19,5 @@ main_collection = /main/main.collectionc
 
 [library]
 include_dirs = ai,entities,utils
+
+; project_version = 1.4.0
