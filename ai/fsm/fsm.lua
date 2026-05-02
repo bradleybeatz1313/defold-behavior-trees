@@ -196,3 +196,18 @@ end
 function M.on_transition(machine, callback)
     machine._on_transition = callback
 end
+
+--- Push current state onto a stack and transition to a new one.
+--- Use M.pop_state to return to the previous state.
+function M.push_state(machine, new_state, context)
+    machine._state_stack = machine._state_stack or {}
+    table.insert(machine._state_stack, machine.current)
+    M.transition(machine, new_state, context)
+end
+
+--- Pop the last pushed state and transition back to it.
+function M.pop_state(machine, context)
+    if not machine._state_stack or #machine._state_stack == 0 then return end
+    local prev = table.remove(machine._state_stack)
+    M.transition(machine, prev, context)
+end
