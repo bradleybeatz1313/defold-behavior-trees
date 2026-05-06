@@ -450,3 +450,17 @@ end
 function M.any(children, name)
     return M.selector(children, name or "any")
 end
+
+--- Timeout decorator: fails child if it is still RUNNING after deadline.
+function M.timeout(child, max_seconds, name)
+    local node = { type="action", name=name or "timeout", _start=nil }
+    node.execute = function(ctx)
+        local now = ctx.time or os.clock()
+        if not node._start then node._start = now end
+        if (now - node._start) > max_seconds then node._start=nil; return M.FAILURE end
+        local r = M.run(child, ctx)
+        if r ~= M.RUNNING then node._start = nil end
+        return r
+    end
+    return node
+end
