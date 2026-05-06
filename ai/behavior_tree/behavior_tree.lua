@@ -440,3 +440,13 @@ function M.profiled(root)
         end
     }
 end
+
+--- All-success node: succeeds only if ALL children succeed (alias for sequence with no memory).
+function M.all(children, name)
+    return M.sequence(children, name or "all")
+end
+
+--- Any-success node: succeeds if ANY child succeeds (alias for selector).
+function M.any(children, name)
+    return M.selector(children, name or "any")
+end
