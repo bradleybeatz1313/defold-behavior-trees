@@ -126,3 +126,13 @@ MIT
 | wait | Leaf | RUNNING until duration elapsed |
 | subtree | Reference | Delegates to another tree |
 | noop | Leaf | Always SUCCESS |
+
+---
+
+## Changelog
+
+- **v1.4.0** (2026-04): Added profiled(), wait(), timeout(), retry() nodes; FSM push/pop state
+- **v1.3.0** (2025-09): Added status_line, VERSION, guard, subtree nodes
+- **v1.2.0** (2025-07): Added clone(), set_max_history, validate_config
+- **v1.1.0** (2025-06): Added FSM reset, clear_history, perception thresholds
+- **v1.0.0** (2025-05): Initial release
