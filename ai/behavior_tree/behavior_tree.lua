@@ -464,3 +464,15 @@ function M.timeout(child, max_seconds, name)
     end
     return node
 end
+
+--- Until node: runs child repeatedly until it succeeds.
+function M.until_success(child, name)
+    return {
+        type="action", name=name or "until_success",
+        execute=function(ctx)
+            local r = M.run(child, ctx)
+            if r == M.SUCCESS then return M.SUCCESS end
+            return M.RUNNING
+        end
+    }
+end
