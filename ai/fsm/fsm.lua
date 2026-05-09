@@ -211,3 +211,11 @@ function M.pop_state(machine, context)
     local prev = table.remove(machine._state_stack)
     M.transition(machine, prev, context)
 end
+
+--- Returns a table of all defined state names.
+function M.state_names(machine)
+    local names = {}
+    for name in pairs(machine.states) do table.insert(names, name) end
+    table.sort(names)
+    return names
+end
