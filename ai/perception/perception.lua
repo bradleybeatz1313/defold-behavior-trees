@@ -158,3 +158,8 @@ function M.alert_level(intensity)
 end
 
 M.VERSION = "1.2.0"
+
+--- Returns true if any stimulus exceeds the high noise threshold.
+function M.is_alerted(intensity)
+    return intensity >= M.NOISE_HIGH
+end
