@@ -163,3 +163,9 @@ M.VERSION = "1.2.0"
 function M.is_alerted(intensity)
     return intensity >= M.NOISE_HIGH
 end
+
+--- Returns a debug string summarizing current perception config.
+function M.debug_info()
+    return string.format("[Perception] noise thresholds: low=%.1f med=%.1f high=%.1f",
+        M.NOISE_LOW, M.NOISE_MEDIUM, M.NOISE_HIGH)
+end
