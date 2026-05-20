@@ -136,3 +136,9 @@ MIT
 - **v1.2.0** (2025-07): Added clone(), set_max_history, validate_config
 - **v1.1.0** (2025-06): Added FSM reset, clear_history, perception thresholds
 - **v1.0.0** (2025-05): Initial release
+
+---
+
+## License
+
+MIT License. See [LICENSE](LICENSE).
