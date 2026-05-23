@@ -476,3 +476,13 @@ function M.until_success(child, name)
         end
     }
 end
+
+--- Counts total nodes in the tree.
+function M.node_count(node)
+    local count = 1
+    if node.children then
+        for _, c in ipairs(node.children) do count = count + M.node_count(c) end
+    end
+    if node.child then count = count + M.node_count(node.child) end
+    return count
+end
