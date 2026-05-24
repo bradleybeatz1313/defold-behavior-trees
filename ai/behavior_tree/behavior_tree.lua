@@ -486,3 +486,16 @@ function M.node_count(node)
     if node.child then count = count + M.node_count(node.child) end
     return count
 end
+
+--- Retry decorator: re-runs child up to max_retries times on failure.
+function M.retry(child, max_retries, name)
+    local node = { type="action", name=name or "retry", _attempts=0 }
+    node.execute = function(ctx)
+        if node._attempts >= max_retries then node._attempts=0; return M.FAILURE end
+        local r = M.run(child, ctx)
+        if r == M.FAILURE then node._attempts = node._attempts + 1; return M.RUNNING end
+        node._attempts = 0
+        return r
+    end
+    return node
+end
