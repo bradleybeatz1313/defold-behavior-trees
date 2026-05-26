@@ -1,0 +1,299 @@
+--- agent.script
+--- Main agent controller for AI-driven entities in Defold.
+--- Integrates the behavior tree and FSM modules with Defold's
+--- game object lifecycle and message passing system.
+
+local bt = require("ai.behavior_tree.behavior_tree")
+local fsm = require("ai.fsm.fsm")
+local perception = require("ai.perception.perception")
+
+-- Agent properties exposed in the editor
+go.property("move_speed", 150)
+go.property("sight_range", 250)
+go.property("attack_range", 40)
+go.property("attack_damage", 10)
+go.property("max_health", 100)
+go.property("fov_degrees", 120)
+go.property("agent_type", hash("standard"))
+
+-- ============================================================
+-- Local State
+-- ============================================================
+
+local health
+local target_id = nil
+local target_pos = nil
+local patrol_points = {}
+local patrol_index = 1
+local perception_data = {}
+local behavior_tree
+local state_machine
+local context = {}
+
+-- ============================================================
+-- Behavior Tree Definition
+-- ============================================================
+
+local function build_behavior_tree()
+    return bt.selector({
+        -- Priority 1: Flee when critically wounded
+        bt.sequence({
+            bt.condition(function(ctx)
+                return ctx.health_ratio < 0.2
+            end, "health_critical"),
+            bt.action(function(ctx)
+                if ctx.target_pos then
+                    local my_pos = go.get_position()
+                    local flee_dir = vmath.normalize(my_pos - ctx.target_pos)
+                    local flee_target = my_pos + flee_dir * 200
+                    ctx.move_target = flee_target
+                    fsm.transition(ctx.fsm, "fleeing", ctx)
+                end
+                return bt.RUNNING
+            end, "flee")
+        }, "flee_sequence"),
+
+        -- Priority 2: Attack target in range
+        bt.sequence({
+            bt.condition(function(ctx)
+                return ctx.target_id ~= nil and ctx.target_distance <= ctx.attack_range
+            end, "target_in_range"),
+            bt.cooldown(
+                bt.action(function(ctx)
+                    msg.post(ctx.target_id, "take_damage", {
+                        amount = ctx.attack_damage,
+                        source = go.get_id()
+                    })
+                    fsm.transition(ctx.fsm, "attacking", ctx)
+                    return bt.SUCCESS
+                end, "attack"),
+                1.0, "attack_cooldown"
+            )
+        }, "attack_sequence"),
+
+        -- Priority 3: Pursue visible target
+        bt.sequence({
+            bt.condition(function(ctx)
+                return ctx.target_id ~= nil
+            end, "has_target"),
+            bt.action(function(ctx)
+                ctx.move_target = ctx.target_pos
+                fsm.transition(ctx.fsm, "pursuing", ctx)
+                return bt.RUNNING
+            end, "pursue")
+        }, "pursue_sequence"),
+
+        -- Priority 4: Investigate noise
+        bt.sequence({
+            bt.condition(function(ctx)
+                return ctx.last_heard ~= nil
+            end, "heard_noise"),
+            bt.action(function(ctx)
+                ctx.move_target = ctx.last_heard
+                fsm.transition(ctx.fsm, "investigating", ctx)
+                -- Clear noise after arriving
+                local dist = vmath.length(go.get_position() - ctx.last_heard)
+                if dist < 16 then
+                    ctx.last_heard = nil
+                    return bt.SUCCESS
+                end
+                return bt.RUNNING
+            end, "investigate")
+        }, "investigate_sequence"),
+
+        -- Priority 5: Patrol (default)
+        bt.action(function(ctx)
+            if #ctx.patrol_points == 0 then
+                return bt.FAILURE
+            end
+            ctx.move_target = ctx.patrol_points[ctx.patrol_index]
+            local dist = vmath.length(go.get_position() - ctx.move_target)
+            if dist < 16 then
+                ctx.patrol_index = (ctx.patrol_index % #ctx.patrol_points) + 1
+            end
+            fsm.transition(ctx.fsm, "patrolling", ctx)
+            return bt.RUNNING
+        end, "patrol")
+    }, "root")
+end
+
+-- ============================================================
+-- FSM Definition
+-- ============================================================
+
+local function build_fsm()
+    return fsm.create({
+        initial = "idle",
+        states = {
+            idle = {
+                enter = function(ctx)
+                    msg.post("#sprite", "play_animation", { id = hash("idle") })
+                end,
+                update = function(dt, ctx) end,
+            },
+            patrolling = {
+                enter = function(ctx)
+                    msg.post("#sprite", "play_animation", { id = hash("walk") })
+                end,
+                update = function(dt, ctx)
+                    move_toward(ctx.move_target, dt, ctx.move_speed * 0.6)
+                end,
+            },
+            pursuing = {
+                enter = function(ctx)
+                    msg.post("#sprite", "play_animation", { id = hash("run") })
+                end,
+                update = function(dt, ctx)
+                    if ctx.move_target then
+                        move_toward(ctx.move_target, dt, ctx.move_speed)
+                    end
+                end,
+            },
+            attacking = {
+                enter = function(ctx)
+                    msg.post("#sprite", "play_animation", { id = hash("attack") })
+                end,
+                update = function(dt, ctx) end,
+            },
+            fleeing = {
+                enter = function(ctx)
+                    msg.post("#sprite", "play_animation", { id = hash("run") })
+                end,
+                update = function(dt, ctx)
+                    if ctx.move_target then
+                        move_toward(ctx.move_target, dt, ctx.move_speed * 1.3)
+                    end
+                end,
+            },
+            investigating = {
+                enter = function(ctx)
+                    msg.post("#sprite", "play_animation", { id = hash("walk") })
+                end,
+                update = function(dt, ctx)
+                    if ctx.move_target then
+                        move_toward(ctx.move_target, dt, ctx.move_speed * 0.8)
+                    end
+                end,
+            },
+            dead = {
+                enter = function(ctx)
+                    msg.post("#sprite", "play_animation", { id = hash("death") })
+                    msg.post("#collisionobject", "disable")
+                    timer.delay(2.0, false, function()
+                        go.delete()
+                    end)
+                end,
+            },
+        },
+        transitions = {}  -- Transitions handled by BT, FSM used for state enter/exit
+    })
+end
+
+-- ============================================================
+-- Movement
+-- ============================================================
+
+function move_toward(target, dt, speed)
+    local pos = go.get_position()
+    local direction = target - pos
+    local distance = vmath.length(direction)
+
+    if distance < 4 then return end
+
+    local normalized = vmath.normalize(direction)
+    local movement = normalized * speed * dt
+    
+    if vmath.length(movement) > distance then
+        go.set_position(target)
+    else
+        go.set_position(pos + movement)
+    end
+
+    -- Flip sprite based on direction
+    local scale = go.get_scale()
+    if normalized.x < 0 then
+        scale.x = -math.abs(scale.x)
+    else
+        scale.x = math.abs(scale.x)
+    end
+    go.set_scale(scale)
+end
+
+-- ============================================================
+-- Lifecycle
+-- ============================================================
+
+function init(self)
+    health = self.max_health
+    behavior_tree = build_behavior_tree()
+    state_machine = build_fsm()
+
+    -- Register with AI manager
+    msg.post("/ai_manager", "register_agent", {
+        id = go.get_id(),
+        type = self.agent_type
+    })
+end
+
+function update(self, dt)
+    if health <= 0 then return end
+
+    -- Update perception
+    perception_data = perception.scan(
+        go.get_position(),
+        self.sight_range,
+        self.fov_degrees,
+        go.get_id()
+    )
+
+    -- Build context for BT and FSM
+    context.health = health
+    context.health_ratio = health / self.max_health
+    context.target_id = perception_data.nearest_enemy
+    context.target_pos = perception_data.nearest_enemy_pos
+    context.target_distance = perception_data.nearest_enemy_dist or math.huge
+    context.last_heard = perception_data.last_noise
+    context.attack_range = self.attack_range
+    context.attack_damage = self.attack_damage
+    context.move_speed = self.move_speed
+    context.patrol_points = patrol_points
+    context.patrol_index = patrol_index
+    context.fsm = state_machine
+    context.dt = dt
+
+    -- Run behavior tree (makes decisions)
+    bt.run(behavior_tree, context)
+
+    -- Update FSM (executes current state logic)
+    fsm.update(state_machine, dt, context)
+
+    -- Sync back mutable context
+    patrol_index = context.patrol_index
+end
+
+function on_message(self, message_id, message, sender)
+    if message_id == hash("take_damage") then
+        health = health - message.amount
+        -- Flash red
+        go.set("#sprite", "tint", vmath.vector4(1, 0.3, 0.3, 1))
+        timer.delay(0.15, false, function()
+            go.set("#sprite", "tint", vmath.vector4(1, 1, 1, 1))
+        end)
+
+        if health <= 0 then
+            fsm.transition(state_machine, "dead", context)
+            msg.post("/ai_manager", "agent_died", { id = go.get_id() })
+        end
+
+    elseif message_id == hash("set_patrol_points") then
+        patrol_points = message.points
+        patrol_index = 1
+
+    elseif message_id == hash("hear_noise") then
+        perception_data.last_noise = message.position
+    end
+end
+
+function final(self)
+    msg.post("/ai_manager", "unregister_agent", { id = go.get_id() })
+end
